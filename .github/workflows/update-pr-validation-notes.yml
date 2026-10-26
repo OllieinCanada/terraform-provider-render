@@ -1,0 +1,39 @@
+name: Update Render PR validation notes
+
+on:
+  push:
+    branches:
+      - automation/update-pr-validation-notes
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-render-pr-validation-notes
+  cancel-in-progress: false
+
+jobs:
+  update-descriptions:
+    if: github.repository == 'OllieinCanada/terraform-provider-render' && github.actor == 'OllieinCanada'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check out the updater
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Update and verify PR descriptions
+        env:
+          GH_TOKEN: ${{ secrets.RENDER_PR_UPDATE_TOKEN }}
+          GH_HOST: github.com
+        run: |
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo '::error title=Repository secret required::Add RENDER_PR_UPDATE_TOKEN as an Actions repository secret, then re-run this job. No PR descriptions have been changed.'
+            exit 1
+          fi
+          python3 .github/pr-validation-update/update_render_pr_descriptions.py
+          {
+            echo '## Updated and verified'
+            echo '- https://github.com/render-oss/terraform-provider-render/pull/109'
+            echo '- https://github.com/render-oss/terraform-provider-render/pull/110'
+          } >> "${GITHUB_STEP_SUMMARY}"
